@@ -137,7 +137,7 @@ footer{margin-top:26px;color:var(--muted);font-size:12px;text-align:center;line-
           <div class="field">
             <label class="lbl">Pricing Model</label>
             <div class="seg" id="modelSeg">
-              <button data-v="standard" aria-pressed="true">Standard</button>
+              <button data-v="standard" aria-pressed="true">Flat Rate</button>
               <button data-v="icplus" aria-pressed="false">IC Plus</button>
               <button data-v="cash" aria-pressed="false">Cash Discounting</button>
             </div>
@@ -317,7 +317,7 @@ function calc(inp, P){
     lines=[['Cash-discount fees',cashTake,1],['Interchange & network',-interch,-1],
            ['Interac fees',-interacFee,-1],['Processor costs',-proc,-1]];
   } else {
-    mrr=stdMRR; etr=take/totGpv; model='Standard';
+    mrr=stdMRR; etr=take/totGpv; model='Flat Rate';
     lines=[['Gross take (fees collected)',take,1],['Interchange & network',-interch,-1],
            ['Interac fees',-interacFee,-1],['Processor costs',-proc,-1]];
   }
