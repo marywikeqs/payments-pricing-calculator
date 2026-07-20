@@ -41,9 +41,16 @@ header.top{display:flex;align-items:center;justify-content:space-between;gap:16p
 .field{margin-bottom:16px}
 .field:last-child{margin-bottom:0}
 label.lbl{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:7px;letter-spacing:.01em}
-select,input[type=number]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
+select,input[type=number],input[type=text]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
   background:var(--panel-2);color:var(--ink);font-size:14.5px;font-family:inherit;appearance:none}
 select:focus,input:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:var(--brand)}
+.btn-primary{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;border:0;border-radius:10px;
+  padding:11px 18px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
+.btn-primary:disabled{opacity:.55;cursor:default}
+.logbar{margin-top:18px;border-top:1px solid var(--line);padding-top:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logstatus{font-size:13px;color:var(--muted)}
+.logstatus.ok{color:var(--good);font-weight:600} .logstatus.err{color:var(--warn)}
+footer a{color:var(--brand);cursor:pointer;text-decoration:none}
 .seg{display:flex;background:var(--chip);border-radius:11px;padding:4px;gap:4px}
 .seg button{flex:1;border:0;background:transparent;color:var(--muted);padding:9px 10px;border-radius:8px;
   font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:.12s}
@@ -111,6 +118,10 @@ footer{margin-top:26px;color:var(--muted);font-size:12px;text-align:center;line-
       <section class="card">
         <div class="hd">Deal Inputs</div>
         <div class="bd">
+          <div class="field">
+            <label class="lbl">Opportunity ID</label>
+            <input type="text" id="oppId" placeholder="Salesforce Opportunity ID (e.g. 006Ab000001234X)" autocomplete="off">
+          </div>
           <div class="field">
             <label class="lbl">GPV Entry</label>
             <div class="seg" id="modeSeg">
@@ -231,13 +242,18 @@ footer{margin-top:26px;color:var(--muted);font-size:12px;text-align:center;line-
           <div class="mixbar" id="mixbar"></div>
           <div class="mixlegend" id="mixlegend"></div>
         </div>
+
+        <div class="logbar">
+          <button class="btn-primary" id="logBtn">Log estimate</button>
+          <span class="logstatus" id="logStatus">Records this estimate against the Opportunity ID for later reconciliation.</span>
+        </div>
       </div>
     </section>
   </div>
 
   <footer>
     Built from <em>Payments Pricing Calculator vFinal (June 2026)</em>. Outputs match the source model exactly.<br/>
-    Quilt Software · internal deal-pricing estimate
+    Quilt Software · internal deal-pricing estimate · <a id="exportLink">Export log (CSV)</a>
   </footer>
 </div>
 
@@ -377,6 +393,47 @@ function render(){
   document.getElementById('cur1').textContent = cur==='CAD'?'C$':'$';
 }
 
+const r2=v=>v==null?'':Math.round(v*100)/100;
+const r4=v=>v==null?'':Math.round(v*1e6)/1e6;
+function buildLogRecord(oppId){
+  const inp=readInputs(); const cur=inp.country==='CA'?'CAD':'USD';
+  const r=calc(inp, readPricing());
+  const n=id=>+document.getElementById(id).value||0;
+  return {
+    opportunityId:oppId,
+    gpvMode:inp.mode,
+    totalGpv: inp.mode==='combined'?inp.gpv:'',
+    cpGpv: inp.mode==='split'?inp.cpGpv:'',
+    cnpGpv: inp.mode==='split'?inp.cnpGpv:'',
+    industry:inp.industry, country:inp.country, currency:cur,
+    pricingModel:r.model, brand:inp.brand, month:inp.month,
+    rate_inStore_vmd_pct:n('is_vmd_rate'), fee_inStore_vmd:n('is_vmd_fee'),
+    rate_inStore_amex_pct:n('is_amex_rate'), fee_inStore_amex:n('is_amex_fee'),
+    rate_inStore_interac_pct:n('is_int_rate'), fee_inStore_interac:n('is_int_fee'),
+    rate_online_vmd_pct:n('on_vmd_rate'), fee_online_vmd:n('on_vmd_fee'),
+    rate_online_amex_pct:n('on_amex_rate'), fee_online_amex:n('on_amex_fee'),
+    icPlus_monthlyFee:n('ic_monthly'), icPlus_inStore_pct:n('ic_is_rate'), icPlus_inStore_fee:n('ic_is_fee'),
+    icPlus_online_pct:n('ic_on_rate'), icPlus_online_fee:n('ic_on_fee'),
+    cash_pct:n('cd_rate'), cash_fee:n('cd_fee'),
+    out_MRR:r2(r.mrr), out_ARR:r2(r.mrr*12),
+    out_effectiveTakeRate: inp.model==='icplus'?'N/A':r4(r.etr),
+    out_NRM:r4(r.mrr/r.totGpv), out_adjGpv:r2(r.adjGpv), out_impliedTxns:Math.round(r.totTxn)
+  };
+}
+async function logEstimate(){
+  const oppId=document.getElementById('oppId').value.trim();
+  const status=document.getElementById('logStatus');
+  if(!oppId){ status.className='logstatus err'; status.textContent='Enter an Opportunity ID before logging.'; document.getElementById('oppId').focus(); return; }
+  const btn=document.getElementById('logBtn'); btn.disabled=true;
+  status.className='logstatus'; status.textContent='Logging…';
+  try{
+    const res=await fetch('/.netlify/functions/log-estimate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(buildLogRecord(oppId))});
+    if(!res.ok){ throw new Error((await res.text())||('HTTP '+res.status)); }
+    status.className='logstatus ok'; status.textContent='Logged ✓  '+new Date().toLocaleString();
+  }catch(e){
+    status.className='logstatus err'; status.textContent='Could not log — this works only on the deployed site. ('+e.message+')';
+  }finally{ btn.disabled=false; }
+}
 function showRateGroup(){
   document.getElementById('rc-standard').classList.toggle('on', state.model==='standard');
   document.getElementById('rc-icplus').classList.toggle('on', state.model==='icplus');
@@ -406,6 +463,11 @@ function applyDefaults(){ for(const id in RATE_DEFAULTS){ document.getElementByI
     showRateGroup(); render();
   });
   document.getElementById('resetRates').addEventListener('click',()=>{ applyDefaults(); render(); });
+  document.getElementById('logBtn').addEventListener('click',logEstimate);
+  document.getElementById('exportLink').addEventListener('click',()=>{
+    const key=prompt('Enter the export password:'); if(!key)return;
+    window.open('/.netlify/functions/export-log?key='+encodeURIComponent(key),'_blank');
+  });
 
   ['gpv','cpGpv','cnpGpv','industry','country','brand','month'].forEach(id=>{
     document.getElementById(id).addEventListener('input',render);

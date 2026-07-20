@@ -1,0 +1,9 @@
+{
+  "name": "payments-pricing-calculator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Web version of the Payments Pricing Calculator spreadsheet, with estimate logging.",
+  "dependencies": {
+    "@netlify/blobs": "^8.0.0"
+  }
+}
