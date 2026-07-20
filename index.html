@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Quilt Payments — Pricing Calculator</title>
+<style>
+:root{
+  --bg:#f5f6fa; --panel:#ffffff; --panel-2:#fbfbfe; --ink:#1a1c2e; --muted:#6b6f8a;
+  --line:#e7e8f2; --brand:#5b4be6; --brand-2:#8b5cf6; --brand-ink:#3d2fb8;
+  --good:#0d9a6a; --warn:#c2410c; --chip:#eef0fb; --shadow:0 1px 2px rgba(20,22,50,.06),0 8px 24px rgba(20,22,50,.06);
+}
+html[data-theme="dark"]{
+  --bg:#0e1020; --panel:#171a2e; --panel-2:#1c2038; --ink:#eef0fb; --muted:#9aa0c4;
+  --line:#2a2f4d; --brand:#8b7bff; --brand-2:#a78bfa; --brand-ink:#c7bcff;
+  --good:#34d399; --warn:#fb923c; --chip:#232842; --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 20px 64px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand-2));
+  display:grid;place-items:center;color:#fff;font-weight:800;box-shadow:var(--shadow)}
+.logo svg{width:22px;height:22px}
+.brand h1{font-size:18px;margin:0;letter-spacing:-.2px}
+.brand p{margin:0;font-size:12.5px;color:var(--muted)}
+.theme{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:9px;
+  padding:8px 12px;cursor:pointer;font-size:13px;display:flex;gap:7px;align-items:center}
+.theme:hover{color:var(--ink)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:20px;align-items:start}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:20px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.card .hd{padding:15px 20px;border-bottom:1px solid var(--line);font-weight:700;font-size:13px;
+  letter-spacing:.04em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.card .hd a{font-size:11.5px;text-transform:none;letter-spacing:0;color:var(--brand);cursor:pointer;font-weight:600}
+.card .bd{padding:18px 20px}
+.field{margin-bottom:16px}
+.field:last-child{margin-bottom:0}
+label.lbl{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:7px;letter-spacing:.01em}
+select,input[type=number]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel-2);color:var(--ink);font-size:14.5px;font-family:inherit;appearance:none}
+select:focus,input:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:var(--brand)}
+.seg{display:flex;background:var(--chip);border-radius:11px;padding:4px;gap:4px}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);padding:9px 10px;border-radius:8px;
+  font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:.12s}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:var(--shadow)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.inputwrap{position:relative}
+.inputwrap .pre{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none}
+.inputwrap .post{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none}
+.inputwrap.money input{padding-left:26px}
+.inputwrap.pct input{padding-right:26px}
+.hint{font-size:11.5px;color:var(--muted);margin-top:6px}
+/* rate card rows */
+.rc-row{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:10px;align-items:end;margin-bottom:12px}
+.rc-row:last-child{margin-bottom:0}
+.rc-row .name{font-size:13px;font-weight:600;padding-bottom:10px}
+.rc-head{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:10px;font-size:11px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;font-weight:700}
+.rc-head span:first-child{visibility:hidden}
+.rc-group{display:none}
+.rc-group.on{display:block}
+.subhdr{font-size:11.5px;font-weight:700;color:var(--brand-ink);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 8px}
+.subhdr:first-child{margin-top:0}
+/* results */
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.kpi{background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:16px}
+.kpi.big{grid-column:1/-1;background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;border:0}
+.kpi .k{font-size:12px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;opacity:.9}
+.kpi .v{font-size:26px;font-weight:800;letter-spacing:-.5px;margin-top:6px}
+.kpi.big .v{font-size:40px}
+.kpi .sub{font-size:12px;opacity:.85;margin-top:3px}
+.model-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);
+  padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:700;margin-top:2px}
+.break{margin-top:18px;border-top:1px solid var(--line);padding-top:16px}
+.break h3{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:14px;border-bottom:1px dashed var(--line)}
+.row:last-child{border-bottom:0}
+.row .lab{color:var(--muted)}
+.row .amt{font-variant-numeric:tabular-nums;font-weight:600}
+.row.neg .amt{color:var(--warn)}
+.row.total{border-top:2px solid var(--line);border-bottom:0;margin-top:4px;padding-top:12px;font-weight:800;font-size:15px}
+.row.total .lab{color:var(--ink);font-weight:800}
+.mix{margin-top:16px}
+.mix h3{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.mixbar{height:12px;border-radius:7px;overflow:hidden;display:flex;background:var(--chip)}
+.mixbar span{height:100%}
+.mixlegend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:12px;color:var(--muted)}
+.mixlegend i{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:middle}
+footer{margin-top:26px;color:var(--muted);font-size:12px;text-align:center;line-height:1.7}
+.disclaim{background:var(--chip);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--muted);margin-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 8h16M4 12h16M4 16h16" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><circle cx="8" cy="8" r="1.6" fill="#fff"/><circle cx="15" cy="16" r="1.6" fill="#fff"/></svg></div>
+      <div><h1>Payments Pricing Calculator</h1><p>Estimate monthly net revenue, take rate &amp; margin by deal</p></div>
+    </div>
+    <button class="theme" id="themeBtn">🌙 <span>Dark</span></button>
+  </header>
+
+  <div class="grid">
+    <div class="col">
+      <!-- DEAL INPUTS -->
+      <section class="card">
+        <div class="hd">Deal Inputs</div>
+        <div class="bd">
+          <div class="field">
+            <label class="lbl">GPV Entry</label>
+            <div class="seg" id="modeSeg">
+              <button data-v="combined" aria-pressed="true">Combined</button>
+              <button data-v="split" aria-pressed="false">CP / CNP Split</button>
+            </div>
+          </div>
+
+          <div class="field" id="combinedField">
+            <label class="lbl">Total Combined Monthly GPV</label>
+            <div class="inputwrap money"><span class="pre" id="cur1">$</span><input type="number" id="gpv" value="13320" min="0" step="100"></div>
+          </div>
+
+          <div class="field two" id="splitField" style="display:none">
+            <div><label class="lbl">Card-Present GPV</label><div class="inputwrap money"><span class="pre">$</span><input type="number" id="cpGpv" value="10000" min="0" step="100"></div></div>
+            <div><label class="lbl">Card-Not-Present GPV</label><div class="inputwrap money"><span class="pre">$</span><input type="number" id="cnpGpv" value="3320" min="0" step="100"></div></div>
+          </div>
+
+          <div class="field two">
+            <div><label class="lbl">Industry</label><select id="industry"></select></div>
+            <div><label class="lbl">Country</label><select id="country"></select></div>
+          </div>
+
+          <div class="field">
+            <label class="lbl">Pricing Model</label>
+            <div class="seg" id="modelSeg">
+              <button data-v="standard" aria-pressed="true">Standard</button>
+              <button data-v="icplus" aria-pressed="false">IC Plus</button>
+              <button data-v="cash" aria-pressed="false">Cash Discounting</button>
+            </div>
+          </div>
+
+          <div class="field two">
+            <div><label class="lbl">Brand</label><select id="brand"><option>Other</option><option>Atlantic Systems</option></select></div>
+            <div><label class="lbl">Month of Statement</label><select id="month"></select></div>
+          </div>
+          <div class="hint">Brand &amp; month drive the seasonality adjustment (applied in CP/CNP Split mode).</div>
+        </div>
+      </section>
+
+      <!-- RATE CARD (editable) -->
+      <section class="card">
+        <div class="hd"><span>Rate Card <span style="font-weight:400;text-transform:none;letter-spacing:0">— editable</span></span><a id="resetRates">Reset to defaults</a></div>
+        <div class="bd">
+          <!-- STANDARD -->
+          <div class="rc-group" id="rc-standard">
+            <div class="subhdr">In-Store (Card Present)</div>
+            <div class="rc-head"><span>x</span><span>% Rate</span><span>Per Txn</span></div>
+            <div class="rc-row"><div class="name">Visa / MC / Disc</div>
+              <div class="inputwrap pct"><input type="number" id="is_vmd_rate" step="0.01"><span class="post">%</span></div>
+              <div class="inputwrap money"><span class="pre">$</span><input type="number" id="is_vmd_fee" step="0.01"></div></div>
+            <div class="rc-row"><div class="name">Amex</div>
+              <div class="inputwrap pct"><input type="number" id="is_amex_rate" step="0.01"><span class="post">%</span></div>
+              <div class="inputwrap money"><span class="pre">$</span><input type="number" id="is_amex_fee" step="0.01"></div></div>
+            <div class="rc-row"><div class="name">Interac</div>
+              <div class="inputwrap pct"><input type="number" id="is_int_rate" step="0.01"><span class="post">%</span></div>
+              <div class="inputwrap money"><span class="pre">$</span><input type="number" id="is_int_fee" step="0.01"></div></div>
+            <div class="subhdr">Online (Card Not Present)</div>
+            <div class="rc-row"><div class="name">Visa / MC / Disc</div>
+              <div class="inputwrap pct"><input type="number" id="on_vmd_rate" step="0.01"><span class="post">%</span></div>
+              <div class="inputwrap money"><span class="pre">$</span><input type="number" id="on_vmd_fee" step="0.01"></div></div>
+            <div class="rc-row"><div class="name">Amex</div>
+              <div class="inputwrap pct"><input type="number" id="on_amex_rate" step="0.01"><span class="post">%</span></div>
+              <div class="inputwrap money"><span class="pre">$</span><input type="number" id="on_amex_fee" step="0.01"></div></div>
+          </div>
+
+          <!-- IC PLUS -->
+          <div class="rc-group" id="rc-icplus">
+            <div class="field"><label class="lbl">Monthly Fee</label>
+              <div class="inputwrap money" style="max-width:180px"><span class="pre">$</span><input type="number" id="ic_monthly" step="1"></div></div>
+            <div class="subhdr">Markup over interchange</div>
+            <div class="rc-head"><span>x</span><span>% Markup</span><span>Per Txn</span></div>
+            <div class="rc-row"><div class="name">In-Store</div>
+              <div class="inputwrap pct"><input type="number" id="ic_is_rate" step="0.01"><span class="post">%</span></div>
+              <div class="inputwrap money"><span class="pre">$</span><input type="number" id="ic_is_fee" step="0.01"></div></div>
+            <div class="rc-row"><div class="name">Online</div>
+              <div class="inputwrap pct"><input type="number" id="ic_on_rate" step="0.01"><span class="post">%</span></div>
+              <div class="inputwrap money"><span class="pre">$</span><input type="number" id="ic_on_fee" step="0.01"></div></div>
+            <div class="hint">Interchange &amp; network fees are passed through at cost; the merchant pays this markup on top.</div>
+          </div>
+
+          <!-- CASH -->
+          <div class="rc-group" id="rc-cash">
+            <div class="rc-head"><span>x</span><span>% Rate</span><span>Per Txn</span></div>
+            <div class="rc-row"><div class="name">Cash Discount</div>
+              <div class="inputwrap pct"><input type="number" id="cd_rate" step="0.01"><span class="post">%</span></div>
+              <div class="inputwrap money"><span class="pre">$</span><input type="number" id="cd_fee" step="0.01"></div></div>
+          </div>
+
+          <div class="disclaim">Rates pre-fill with the standard rate card and are fully editable per deal. Processor costs are fixed platform costs (not part of merchant pricing) and are held at the model's defaults.</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- RESULTS -->
+    <section class="card">
+      <div class="hd">Estimated Economics</div>
+      <div class="bd">
+        <div class="kpis">
+          <div class="kpi big">
+            <div class="k">Monthly Recurring Revenue</div>
+            <div class="v" id="o_mrr">—</div>
+            <div class="model-badge" id="o_model">Standard pricing</div>
+          </div>
+          <div class="kpi"><div class="k">Effective Take Rate</div><div class="v" id="o_take">—</div><div class="sub">of gross payment volume</div></div>
+          <div class="kpi"><div class="k">Net Revenue Margin</div><div class="v" id="o_nrm">—</div><div class="sub">MRR ÷ GPV</div></div>
+          <div class="kpi"><div class="k">Annual Recurring Rev.</div><div class="v" id="o_arr">—</div><div class="sub">MRR × 12</div></div>
+          <div class="kpi"><div class="k">Seasonality-Adj. GPV</div><div class="v" id="o_gpv">—</div><div class="sub" id="o_txn">—</div></div>
+        </div>
+
+        <div class="break">
+          <h3>Revenue Build-Up (monthly)</h3>
+          <div id="buildup"></div>
+        </div>
+
+        <div class="mix">
+          <h3>GPV Channel Mix — <span id="mixInd"></span></h3>
+          <div class="mixbar" id="mixbar"></div>
+          <div class="mixlegend" id="mixlegend"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    Built from <em>Payments Pricing Calculator vFinal (June 2026)</em>. Outputs match the source model exactly.<br/>
+    Quilt Software · internal deal-pricing estimate
+  </footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+const MIXCOLORS = ['#5b4be6','#8b5cf6','#22a4c4','#38bdf8','#f59e0b'];
+const BUCKETS = ['cpVmd','cpAmex','cnpVmd','cnpAmex','interac'];
+const BUCKET_LABELS = {cpVmd:'CP · V/M/D',cpAmex:'CP · Amex',cnpVmd:'CNP · V/M/D',cnpAmex:'CNP · Amex',interac:'Interac'};
+const state = {mode:'combined', model:'standard'};
+
+// map rate-card DOM ids -> default values (rates shown as percent numbers)
+const RATE_DEFAULTS = {
+  is_vmd_rate:2.6, is_vmd_fee:0.10, is_amex_rate:2.6, is_amex_fee:0.10, is_int_rate:0, is_int_fee:0,
+  on_vmd_rate:2.9, on_vmd_fee:0.15, on_amex_rate:2.9, on_amex_fee:0.15,
+  ic_monthly:0, ic_is_rate:0.34, ic_is_fee:0.10, ic_on_rate:0.34, ic_on_fee:0.15,
+  cd_rate:3.5, cd_fee:0
+};
+
+function readPricing(){
+  const num=id=>+document.getElementById(id).value||0;
+  const pct=id=>(+document.getElementById(id).value||0)/100;
+  return {
+    inStore:{vmd:{rate:pct('is_vmd_rate'),fee:num('is_vmd_fee')},
+             amex:{rate:pct('is_amex_rate'),fee:num('is_amex_fee')},
+             interac:{rate:pct('is_int_rate'),fee:num('is_int_fee')}},
+    online:{vmd:{rate:pct('on_vmd_rate'),fee:num('on_vmd_fee')},
+            amex:{rate:pct('on_amex_rate'),fee:num('on_amex_fee')}},
+    icPlus:{monthlyFee:num('ic_monthly'), inStore:{rate:pct('ic_is_rate'),fee:num('ic_is_fee')},
+            online:{rate:pct('ic_on_rate'),fee:num('ic_on_fee')}},
+    cashDisc:{rate:pct('cd_rate'),fee:num('cd_fee')},
+    processor:DATA.pricing.processor
+  };
+}
+
+function calc(inp, P){
+  const ind = DATA.industries[inp.industry], pr = P.processor;
+  const months = DATA.seasonality.months;
+  const ai = months.indexOf(inp.month) >= 0 ? months.indexOf(inp.month) : months.indexOf('-');
+  const G57 = inp.gpv / DATA.seasonality.rows['Active'][ai] / 12;
+  let gpv={}, txn={};
+  if(inp.mode==='combined'){
+    const Nimp = G57 / ind.gpvPerTxn;
+    BUCKETS.forEach(b=>{ gpv[b]=ind.gpvPct[b]*G57; txn[b]=ind.txnPct[b]*Nimp; });
+  } else {
+    const row = DATA.seasonality.rows[inp.brand] || DATA.seasonality.rows['Other'];
+    const bf = row[ai];
+    const G58 = inp.cpGpv/bf/12, G59 = inp.cnpGpv/bf/12;
+    const cpg = ind.gpvPct.cpVmd+ind.gpvPct.cpAmex+ind.gpvPct.interac;
+    const cng = ind.gpvPct.cnpVmd+ind.gpvPct.cnpAmex;
+    gpv = {cpVmd:ind.gpvPct.cpVmd/cpg*G58, cpAmex:ind.gpvPct.cpAmex/cpg*G58, interac:ind.gpvPct.interac/cpg*G58,
+           cnpVmd:ind.gpvPct.cnpVmd/cng*G59, cnpAmex:ind.gpvPct.cnpAmex/cng*G59};
+    BUCKETS.forEach(b=>{ const gpt = ind.txnAbs[b]? ind.gpvAbs[b]/ind.txnAbs[b] : 0; txn[b] = gpt? gpv[b]/gpt : 0; });
+  }
+  const ic = ind.icPct, ins=P.inStore, on=P.online;
+  const totGpv = BUCKETS.reduce((s,b)=>s+gpv[b],0);
+  const totTxn = BUCKETS.reduce((s,b)=>s+txn[b],0);
+  const take = gpv.cpVmd*ins.vmd.rate+txn.cpVmd*ins.vmd.fee + gpv.cpAmex*ins.amex.rate+txn.cpAmex*ins.amex.fee
+             + gpv.cnpVmd*on.vmd.rate+txn.cnpVmd*on.vmd.fee + gpv.cnpAmex*on.amex.rate+txn.cnpAmex*on.amex.fee
+             + gpv.interac*ins.interac.rate+txn.interac*ins.interac.fee;
+  const interch = BUCKETS.reduce((s,b)=>s+gpv[b]*ic[b],0);
+  const interacFee = pr.interacPerTxn*txn.interac + pr.interacPctGpv*gpv.interac;
+  const proc = pr.pctOfGpv*totGpv + totTxn*pr.perTxn;
+  const stdMRR = take - interch - interacFee - proc;
+  const icp = P.icPlus;
+  const markup = icp.inStore.rate*(gpv.cpVmd+gpv.cpAmex+gpv.interac) + icp.online.rate*(gpv.cnpVmd+gpv.cnpAmex)
+               + icp.inStore.fee*(txn.cpVmd+txn.cpAmex+txn.interac) + icp.online.fee*(txn.cnpVmd+txn.cnpAmex) + icp.monthlyFee;
+  const icMRR = markup - proc - interacFee;
+  const cd = P.cashDisc;
+  const cashTake = totGpv*cd.rate + totTxn*cd.fee;
+  const cashMRR = cashTake - interch - interacFee - proc;
+  let mrr, etr, model, lines;
+  if(inp.model==='icplus'){
+    mrr=icMRR; etr=null; model='IC Plus';
+    lines=[['IC-Plus markup',markup,1],['Interac fees',-interacFee,-1],['Processor costs',-proc,-1]];
+  } else if(inp.model==='cash'){
+    mrr=cashMRR; etr=cashTake/totGpv; model='Cash Discounting';
+    lines=[['Cash-discount fees',cashTake,1],['Interchange & network',-interch,-1],
+           ['Interac fees',-interacFee,-1],['Processor costs',-proc,-1]];
+  } else {
+    mrr=stdMRR; etr=take/totGpv; model='Standard';
+    lines=[['Gross take (fees collected)',take,1],['Interchange & network',-interch,-1],
+           ['Interac fees',-interacFee,-1],['Processor costs',-proc,-1]];
+  }
+  return {gpv,txn,totGpv,totTxn,mrr,etr,model,lines,adjGpv:(inp.mode==='combined'?G57:totGpv)};
+}
+
+const fmtMoney=(v,cur)=>new Intl.NumberFormat('en-US',{style:'currency',currency:cur,maximumFractionDigits:2}).format(v||0);
+const fmtMoney0=(v,cur)=>new Intl.NumberFormat('en-US',{style:'currency',currency:cur,maximumFractionDigits:0}).format(v||0);
+const fmtPct=(v)=>v==null?'N/A':(v*100).toFixed(2)+'%';
+
+function readInputs(){
+  return {
+    mode: state.mode, model: state.model,
+    gpv: +document.getElementById('gpv').value||0,
+    cpGpv:+document.getElementById('cpGpv').value||0,
+    cnpGpv:+document.getElementById('cnpGpv').value||0,
+    industry: document.getElementById('industry').value,
+    country: document.getElementById('country').value,
+    brand: document.getElementById('brand').value,
+    month: document.getElementById('month').value,
+  };
+}
+
+function render(){
+  const inp = readInputs();
+  const cur = inp.country==='CA'?'CAD':'USD';
+  const r = calc(inp, readPricing());
+  document.getElementById('o_mrr').textContent = fmtMoney(r.mrr,cur);
+  document.getElementById('o_model').textContent = r.model+' pricing';
+  document.getElementById('o_take').textContent = inp.model==='icplus'?'N/A':fmtPct(r.etr);
+  document.getElementById('o_nrm').textContent = fmtPct(r.mrr/r.totGpv);
+  document.getElementById('o_arr').textContent = fmtMoney0(r.mrr*12,cur);
+  document.getElementById('o_gpv').textContent = fmtMoney0(r.adjGpv,cur);
+  document.getElementById('o_txn').textContent = '≈ '+Math.round(r.totTxn).toLocaleString()+' transactions/mo';
+
+  const bu = document.getElementById('buildup'); bu.innerHTML='';
+  r.lines.forEach(([lab,amt,sign])=>{
+    const d=document.createElement('div'); d.className='row'+(sign<0?' neg':'');
+    d.innerHTML='<span class="lab">'+lab+'</span><span class="amt">'+((sign<0?'−':'')+fmtMoney(Math.abs(amt),cur))+'</span>';
+    bu.appendChild(d);
+  });
+  const tot=document.createElement('div'); tot.className='row total';
+  tot.innerHTML='<span class="lab">Monthly Recurring Revenue</span><span class="amt">'+fmtMoney(r.mrr,cur)+'</span>';
+  bu.appendChild(tot);
+
+  document.getElementById('mixInd').textContent = inp.industry;
+  const bar=document.getElementById('mixbar'); bar.innerHTML='';
+  const leg=document.getElementById('mixlegend'); leg.innerHTML='';
+  BUCKETS.forEach((b,i)=>{
+    const pct = r.totGpv? r.gpv[b]/r.totGpv : 0;
+    if(pct>0.0001){
+      const s=document.createElement('span'); s.style.width=(pct*100)+'%'; s.style.background=MIXCOLORS[i];
+      s.title=BUCKET_LABELS[b]+': '+(pct*100).toFixed(1)+'%'; bar.appendChild(s);
+      const l=document.createElement('span'); l.innerHTML='<i style="background:'+MIXCOLORS[i]+'"></i>'+BUCKET_LABELS[b]+' '+(pct*100).toFixed(1)+'%'; leg.appendChild(l);
+    }
+  });
+  document.getElementById('cur1').textContent = cur==='CAD'?'C$':'$';
+}
+
+function showRateGroup(){
+  document.getElementById('rc-standard').classList.toggle('on', state.model==='standard');
+  document.getElementById('rc-icplus').classList.toggle('on', state.model==='icplus');
+  document.getElementById('rc-cash').classList.toggle('on', state.model==='cash');
+}
+function applyDefaults(){ for(const id in RATE_DEFAULTS){ document.getElementById(id).value = RATE_DEFAULTS[id]; } }
+
+(function init(){
+  applyDefaults();
+  const is=document.getElementById('industry');
+  DATA.industryOrder.forEach(n=>{const o=document.createElement('option');o.textContent=n;if(n==='Framing')o.selected=true;is.appendChild(o);});
+  const cs=document.getElementById('country');
+  DATA.countries.forEach(c=>{const o=document.createElement('option');o.textContent=c;cs.appendChild(o);});
+  const ms=document.getElementById('month');
+  DATA.seasonality.months.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=(m==='-'?'None (flat)':m);if(m==='-')o.selected=true;ms.appendChild(o);});
+
+  document.getElementById('modeSeg').addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b)return; state.mode=b.dataset.v;
+    [...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed',x===b));
+    document.getElementById('combinedField').style.display = state.mode==='combined'?'':'none';
+    document.getElementById('splitField').style.display = state.mode==='split'?'grid':'none';
+    render();
+  });
+  document.getElementById('modelSeg').addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b)return; state.model=b.dataset.v;
+    [...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed',x===b));
+    showRateGroup(); render();
+  });
+  document.getElementById('resetRates').addEventListener('click',()=>{ applyDefaults(); render(); });
+
+  ['gpv','cpGpv','cnpGpv','industry','country','brand','month'].forEach(id=>{
+    document.getElementById(id).addEventListener('input',render);
+  });
+  Object.keys(RATE_DEFAULTS).forEach(id=>{
+    document.getElementById(id).addEventListener('input',render);
+  });
+
+  const tb=document.getElementById('themeBtn');
+  tb.addEventListener('click',()=>{
+    const dark=document.documentElement.getAttribute('data-theme')==='dark';
+    document.documentElement.setAttribute('data-theme',dark?'light':'dark');
+    tb.innerHTML = dark?'🌙 <span>Dark</span>':'☀️ <span>Light</span>';
+  });
+
+  showRateGroup(); render();
+})();
+</script>
+</body>
+</html>
