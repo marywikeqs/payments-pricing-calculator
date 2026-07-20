@@ -232,6 +232,11 @@ footer{margin-top:26px;color:var(--muted);font-size:12px;text-align:center;line-
           <div class="kpi"><div class="k">Seasonality-Adj. GPV</div><div class="v" id="o_gpv">—</div><div class="sub" id="o_txn">—</div></div>
         </div>
 
+        <div class="logbar">
+          <button class="btn-primary" id="logBtn">Log estimate</button>
+          <span class="logstatus" id="logStatus">Records this estimate against the Opportunity ID for later reconciliation.</span>
+        </div>
+
         <div class="break">
           <h3>Revenue Build-Up (monthly)</h3>
           <div id="buildup"></div>
@@ -241,11 +246,6 @@ footer{margin-top:26px;color:var(--muted);font-size:12px;text-align:center;line-
           <h3>GPV Channel Mix — <span id="mixInd"></span></h3>
           <div class="mixbar" id="mixbar"></div>
           <div class="mixlegend" id="mixlegend"></div>
-        </div>
-
-        <div class="logbar">
-          <button class="btn-primary" id="logBtn">Log estimate</button>
-          <span class="logstatus" id="logStatus">Records this estimate against the Opportunity ID for later reconciliation.</span>
         </div>
       </div>
     </section>
